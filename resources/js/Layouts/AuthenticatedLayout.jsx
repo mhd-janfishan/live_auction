@@ -33,7 +33,7 @@ export default function AuthenticatedLayout({ header, children }) {
         },
         {
             name: "Auctions",
-            href: "#",
+            href: route("user.auctions.index"),
             icon: (
                 <svg
                     className="w-5 h-5"

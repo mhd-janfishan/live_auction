@@ -15,7 +15,7 @@ class RoleSeeder extends Seeder
     public function run(): void
     {
         Role::create(['name' => 'admin']);
-        Role::create(['name' => 'user']);
+        Role::create(['name' => 'bidder']);
 
         $admin = User::factory()->create([
             'name' => 'admin',
@@ -25,10 +25,10 @@ class RoleSeeder extends Seeder
         $admin->assignRole('admin');
 
         $user = User::factory()->create([
-            'name' => 'User 2',
-            'email' => 'user@liveauction.com',
+            'name' => 'Bidder 1',
+            'email' => 'bidder@liveauction.com',
             'password' => bcrypt('user1234'),
         ]);
-        $user->assignRole('user');
+        $user->assignRole('bidder');
     }
 }

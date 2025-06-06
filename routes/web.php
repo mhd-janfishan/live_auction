@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\AuctionController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admins\UserController;
 use App\Http\Controllers\HomeController;
@@ -26,7 +27,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 Route::prefix('admin')->middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('admin.dashboard');
     Route::get('/users', [UserController::class, 'index'])->name('admin.users');
+    Route::resource('/auctions', AuctionController::class);
+    Route::get('/auctions/image/{filename}', [AuctionController::class, 'showImage'])->name('auctions.image');
 });
+
 
 
 require __DIR__ . '/auth.php';

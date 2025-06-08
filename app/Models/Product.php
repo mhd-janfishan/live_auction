@@ -19,6 +19,7 @@ class Product extends Model
         'status',
         'auction_start_time',
         'auction_end_time',
+        'time_extension_minutes',
     ];
 
     protected $casts = [

@@ -6,17 +6,21 @@ import { format } from "date-fns";
 import { useEffect, useState } from "react";
 import Pagination from "@/Components/Pagination";
 import Echo from "laravel-echo";
+import ChatBox from "@/Components/Chat/ChatBox";
 
 export default function Show({ auth, auction, bid, isHighestBidder }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         amount: "",
     });
 
-    const [timeLeft, setTimeLeft] = useState("");
+    const [bids, setBids] = useState(bid?.data || []);
     const [currentPrice, setCurrentPrice] = useState(auction.current_price);
-    const [bids, setBids] = useState(bid);
+    const [timeLeft, setTimeLeft] = useState("");
     const [isImageZoomed, setIsImageZoomed] = useState(false);
     const [showBidHistory, setShowBidHistory] = useState(false);
+    const [auctionEndTime, setAuctionEndTime] = useState(
+        auction.auction_end_time
+    );
 
     const calculateTimeLeft = (endTime) => {
         const now = new Date();
@@ -37,34 +41,41 @@ export default function Show({ auth, auction, bid, isHighestBidder }) {
 
     useEffect(() => {
         const timer = setInterval(() => {
-            setTimeLeft(calculateTimeLeft(auction.auction_end_time));
+            setTimeLeft(calculateTimeLeft(auctionEndTime));
         }, 1000);
 
-        // Subscribe to the auction channel
-        window.Echo?.channel(`auction.${auction.id}`).listen("NewBid", (e) => {
-            // Update the current price
-            setCurrentPrice(e.current_price);
+        const channelName = `auction.${auction.id}`;
+        const channel = window.Echo.channel(channelName);
 
-            // Add the new bid to the list
-            setBids((prevBids) => {
-                const newBids = [e, ...prevBids];
-                // Keep only the top 10 bids
-                return newBids.slice(0, 10);
-            });
+        channel.listen("NewBid", (e) => {
+            console.log("Received bid event:", e);
+            setCurrentPrice(e.current_price);
+            if (e.auction_end_time) {
+                setAuctionEndTime(e.auction_end_time);
+            }
+            const newBid = {
+                id: e.id,
+                amount: e.amount,
+                user: e.user,
+                created_at: e.created_at,
+            };
+            setBids((prevBids) => [newBid, ...prevBids]);
+            setShowBidHistory(true);
         });
 
         return () => {
             clearInterval(timer);
-            window.Echo?.leave(`auction.${auction.id}`);
+            if (channel) {
+                channel.unsubscribe();
+            }
         };
-    }, [auction.auction_end_time, auction.id]);
+    }, [auction.id, auctionEndTime]);
 
     const handleSubmit = (e) => {
         e.preventDefault();
         post(route("auctions.bid", auction.id), {
             onSuccess: () => {
                 reset("amount");
-                setShowBidHistory(true);
             },
         });
     };
@@ -82,7 +93,6 @@ export default function Show({ auth, auction, bid, isHighestBidder }) {
         if (hoursLeft <= 24) return "text-yellow-500";
         return "text-green-500";
     };
-
 
     const handleAmountChange = (e, auction) => {
         const input = e.target.value;
@@ -131,10 +141,20 @@ export default function Show({ auth, auction, bid, isHighestBidder }) {
                             </div>
                             {isHighestBidder && (
                                 <div className="mt-2 flex items-center text-green-600">
-                                    <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                                    <svg
+                                        className="w-4 h-4 mr-1.5"
+                                        fill="currentColor"
+                                        viewBox="0 0 20 20"
+                                    >
+                                        <path
+                                            fillRule="evenodd"
+                                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                                            clipRule="evenodd"
+                                        />
                                     </svg>
-                                    <span className="text-sm font-medium">You are the highest bidder</span>
+                                    <span className="text-sm font-medium">
+                                        You are the highest bidder
+                                    </span>
                                 </div>
                             )}
                         </div>
@@ -186,6 +206,11 @@ export default function Show({ auth, auction, bid, isHighestBidder }) {
                                             {auction?.description}
                                         </div>
                                     </div>
+                                    {/* Chat Box */}
+                                    <ChatBox
+                                        auctionId={auction.id}
+                                        user={auth.user}
+                                    />
                                 </div>
 
                                 {/* Right Column - Bidding and History */}
@@ -229,8 +254,8 @@ export default function Show({ auth, auction, bid, isHighestBidder }) {
                                                     ).toLocaleString()}
                                                 </p>
                                                 <p className="text-xs text-gray-500 mt-1">
-                                                    {bids?.data?.length || 0}{" "}
-                                                    bids placed
+                                                    {bids?.length || 0} bids
+                                                    placed
                                                 </p>
                                             </div>
                                             <div className="absolute right-0 top-0 h-full w-1/2 bg-gradient-to-l from-green-200/20 to-transparent"></div>
@@ -285,9 +310,17 @@ export default function Show({ auth, auction, bid, isHighestBidder }) {
                                                 </div>
                                                 <PrimaryButton
                                                     type="submit"
-                                                    disabled={processing || !data.amount || Number(data.amount) <= Number(currentPrice)}
+                                                    disabled={
+                                                        processing ||
+                                                        !data.amount ||
+                                                        Number(data.amount) <=
+                                                            Number(currentPrice)
+                                                    }
                                                     className={`px-8 py-3 text-lg transition-all duration-200 ${
-                                                        processing || !data.amount || Number(data.amount) <= Number(currentPrice)
+                                                        processing ||
+                                                        !data.amount ||
+                                                        Number(data.amount) <=
+                                                            Number(currentPrice)
                                                             ? "bg-gray-400"
                                                             : "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 shadow-md hover:shadow-lg"
                                                     }`}
@@ -358,15 +391,15 @@ export default function Show({ auth, auction, bid, isHighestBidder }) {
                                                     Bid History
                                                 </h2>
                                                 <span className="text-sm text-gray-500">
-                                                    {bids?.data?.length || 0}{" "}
-                                                    total bids
+                                                    {bids?.length || 0} total
+                                                    bids
                                                 </span>
                                             </div>
                                         </div>
                                         <div className="p-6">
-                                            {bids?.data?.length > 0 ? (
+                                            {bids?.length > 0 ? (
                                                 <div className="space-y-3">
-                                                    {bids.data.map((bid) => (
+                                                    {bids.map((bid) => (
                                                         <div
                                                             key={bid.id}
                                                             className="flex justify-between items-center p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-200"
@@ -443,7 +476,7 @@ export default function Show({ auth, auction, bid, isHighestBidder }) {
                                             )}
                                             <div className="mt-6">
                                                 <Pagination
-                                                    links={bids?.links}
+                                                    links={bid?.links}
                                                 />
                                             </div>
                                         </div>

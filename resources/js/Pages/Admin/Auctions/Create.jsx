@@ -16,6 +16,7 @@ export default function Create({ auth }) {
         status: "draft",
         auction_start_time: "",
         auction_end_time: "",
+        time_extension_minutes: "5",
     });
 
     const handleSubmit = (e) => {
@@ -146,6 +147,24 @@ export default function Create({ auth }) {
                                         />
                                         <InputError message={errors.auction_end_time} className="mt-2" />
                                     </div>
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="time_extension_minutes" value="Time Extension (minutes)" />
+                                    <TextInput
+                                        id="time_extension_minutes"
+                                        type="number"
+                                        name="time_extension_minutes"
+                                        value={data.time_extension_minutes}
+                                        className="mt-1 block w-full"
+                                        onChange={(e) => setData("time_extension_minutes", e.target.value)}
+                                        min="1"
+                                        required
+                                    />
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        Number of minutes to extend the auction when a bid is placed near the end
+                                    </p>
+                                    <InputError message={errors.time_extension_minutes} className="mt-2" />
                                 </div>
 
                                 <div>

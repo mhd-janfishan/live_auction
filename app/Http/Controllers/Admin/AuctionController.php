@@ -43,6 +43,7 @@ class AuctionController extends Controller
                 'status' => 'required|in:draft,scheduled,live,ended',
                 'auction_start_time' => 'required|date',
                 'auction_end_time' => 'required|date|after:auction_start_time',
+                'time_extension_minutes' => 'required|integer|min:1',
             ]);
 
             $productService = new ProductService();
@@ -81,6 +82,7 @@ class AuctionController extends Controller
                 'status' => 'required|in:draft,scheduled,live,ended',
                 'auction_start_time' => 'required|date',
                 'auction_end_time' => 'required|date|after:auction_start_time',
+                'time_extension_minutes' => 'required|integer|min:1',
             ]);
 
             $productService = new ProductService();

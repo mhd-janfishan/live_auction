@@ -1,9 +1,8 @@
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import { Head, useForm } from "@inertiajs/react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import PrimaryButton from "@/Components/PrimaryButton";
 import TextInput from "@/Components/TextInput";
-import Echo from 'laravel-echo'
 
 export default function Dashboard({ auth, activeAuctions: initialActiveAuctions, userBids: initialUserBids }) {
     const [currentTime, setCurrentTime] = useState(new Date());
@@ -13,41 +12,64 @@ export default function Dashboard({ auth, activeAuctions: initialActiveAuctions,
         amount: "",
     });
 
+    // Handle bid updates
+    const handleBidUpdate = useCallback((auctionId, newBidData) => {
+        console.log('Received bid update:', { auctionId, newBidData });
+
+        setActiveAuctions(prevAuctions =>
+            prevAuctions.map(auction =>
+                auction.id === parseInt(auctionId)
+                    ? { ...auction, current_price: newBidData.current_price }
+                    : auction
+            )
+        );
+
+        setUserBids(prevBids =>
+            prevBids.map(bid =>
+                bid.product.id === parseInt(auctionId)
+                    ? { ...bid, product: { ...bid.product, current_price: newBidData.current_price } }
+                    : bid
+            )
+        );
+    }, []);
+
     useEffect(() => {
         const timer = setInterval(() => {
             setCurrentTime(new Date());
         }, 1000);
 
-        const channels = activeAuctions?.map(auction => {
-            return window.Echo?.channel(`auction.${auction.id}`).listen("NewBid", (e) => {
-                setActiveAuctions(prevAuctions =>
-                    prevAuctions.map(prevAuction =>
-                        prevAuction.id === auction.id
-                            ? { ...prevAuction, current_price: e.current_price }
-                            : prevAuction
-                    )
-                );
+        const subscriptions = activeAuctions?.map(auction => {
+            console.log('Subscribing to channel:', `auction.${auction.id}`);
 
-                setUserBids(prevBids =>
-                    prevBids.map(bid =>
-                        bid.product.id === auction.id
-                            ? { ...bid, product: { ...bid.product, current_price: e.current_price } }
-                            : bid
-                    )
-                );
+            const channel = window.Echo.channel(`auction.${auction.id}`);
+
+            channel.listen('.NewBid', (e) => {
+                console.log('Received NewBid event on channel:', `auction.${auction.id}`, e);
+                handleBidUpdate(auction.id, e);
             });
-        });
+
+            // Add subscription success/error handlers
+            channel.subscribed(() => {
+                console.log(`Successfully subscribed to channel: auction.${auction.id}`);
+            });
+
+            channel.error((error) => {
+                console.error(`Error on channel auction.${auction.id}:`, error);
+            });
+
+            return channel;
+        }) || [];
 
         return () => {
             clearInterval(timer);
-            // Cleanup channel subscriptions
-            channels?.forEach(channel => {
+            // Cleanup Echo listeners
+            subscriptions.forEach(channel => {
                 if (channel) {
-                    window.Echo?.leave(`auction.${channel.id}`);
+                    window.Echo.leaveChannel(channel.name);
                 }
             });
         };
-    }, [activeAuctions]);
+    }, [activeAuctions, handleBidUpdate]);
 
     const calculateTimeLeft = (endTime) => {
         const end = new Date(endTime);
@@ -70,6 +92,17 @@ export default function Dashboard({ auth, activeAuctions: initialActiveAuctions,
         post(route("auctions.bid", auctionId), {
             onSuccess: () => {
                 reset("amount");
+                // Update the local state immediately after successful bid
+                const newAmount = parseFloat(data.amount);
+                handleBidUpdate(auctionId, {
+                    current_price: newAmount,
+                    user: {
+                        id: auth.user.id,
+                        name: auth.user.name
+                    },
+                    amount: newAmount,
+                    created_at: new Date().toISOString()
+                });
             },
         });
     };

@@ -26,7 +26,7 @@ class AuctionController extends Controller
         $auction = Product::findOrFail($id);
         $bids = $auction->bids()->with('user')->orderBy('amount', 'desc')->paginate(10);
         $highestBid = $bids->first();
-        $isHighestBidder = $highestBid->user_id === $user->id;
+        $isHighestBidder = $highestBid ? $highestBid->user_id === $user->id : false;
         $params = [
             'auction' => $auction,
             'bid' => $bids,

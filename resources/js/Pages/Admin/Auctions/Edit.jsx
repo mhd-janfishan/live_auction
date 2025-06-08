@@ -15,6 +15,7 @@ export default function Edit({ auth, product }) {
         status: product.status,
         auction_start_time: product.auction_start_time,
         auction_end_time: product.auction_end_time,
+        time_extension_minutes: product.time_extension_minutes,
         _method: 'PUT'
     });
 
@@ -157,6 +158,24 @@ export default function Edit({ auth, product }) {
                                         />
                                         <InputError message={errors.auction_end_time} className="mt-2" />
                                     </div>
+                                </div>
+
+                                <div>
+                                    <InputLabel htmlFor="time_extension_minutes" value="Time Extension (minutes)" />
+                                    <TextInput
+                                        id="time_extension_minutes"
+                                        type="number"
+                                        name="time_extension_minutes"
+                                        value={data.time_extension_minutes}
+                                        className="mt-1 block w-full"
+                                        onChange={(e) => setData("time_extension_minutes", e.target.value)}
+                                        min="1"
+                                        required
+                                    />
+                                    <p className="mt-1 text-sm text-gray-500">
+                                        Number of minutes to extend the auction when a bid is placed near the end
+                                    </p>
+                                    <InputError message={errors.time_extension_minutes} className="mt-2" />
                                 </div>
 
                                 <div>

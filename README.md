@@ -62,11 +62,16 @@ php artisan key:generate
 # 6. Run database migrations and seeders
 php artisan migrate --seed
 
-# 7. Configure Reverb WebSocket server in .env
+# 7. Configure pusher WebSocket in .env
 # Add these values:
-# REVERB_APP_KEY=your_app_key
-# REVERB_APP_SECRET=your_app_secret
-# REVERB_APP_ID=your_app_id
+BROADCAST_CONNECTION=pusher
+PUSHER_APP_ID=
+PUSHER_APP_KEY=
+PUSHER_APP_SECRET=
+PUSHER_APP_CLUSTER=
+
+VITE_PUSHER_APP_KEY="${PUSHER_APP_ID}"
+VITE_PUSHER_APP_CLUSTER="${PUSHER_APP_CLUSTER}
 
 # 8. Start the development servers
 # In separate terminal windows:

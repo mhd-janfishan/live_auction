@@ -79,3 +79,13 @@ npm run dev
 
 ```
 
+## Default Admin Credentials
+
+After running the database seeders, you can log in with the following default admin account:
+
+```
+Email: admin@liveauction.com
+Password: admin1234
+
+```
+

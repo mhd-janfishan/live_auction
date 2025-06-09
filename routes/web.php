@@ -9,6 +9,7 @@ use App\Http\Controllers\User\DashboardController as UserDashboardController;
 use App\Http\Controllers\User\BidController;
 use App\Http\Controllers\User\AuctionController as  UserAuctionController;
 use App\Http\Controllers\User\ChatController;
+use App\Http\Controllers\User\NotificationController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -31,6 +32,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/auctions', [UserAuctionController::class, 'index'])->name('user.auctions.index');
     Route::get('/auctions/{auction}', [UserAuctionController::class, 'show'])->name('user.auctions.show');
     Route::post('/auctions/{product}/bid', [BidController::class, 'store'])->name('auctions.bid');
+
+    // Notification routes
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/mark-as-read', [NotificationController::class, 'markAsRead'])->name('notifications.mark-as-read');
+    Route::post('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead'])->name('notifications.mark-all-as-read');
 });
 
 /**

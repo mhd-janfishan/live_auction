@@ -56,7 +56,8 @@ return [
                 'encrypted' => true,
                 'host' => 'api-'.env('PUSHER_APP_CLUSTER', 'mt1').'.pusher.com',
                 'port' => 443,
-                'scheme' => 'https'
+                'scheme' => 'https',
+                'useTLS' => true,
             ],
             'client_options' => [
                 // Guzzle client options

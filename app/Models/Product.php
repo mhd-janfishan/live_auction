@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\SoftDeletes;
+
 
 class Product extends Model
 {
@@ -20,11 +20,13 @@ class Product extends Model
         'auction_start_time',
         'auction_end_time',
         'time_extension_minutes',
+        'latest_bidder_id',
     ];
 
     protected $casts = [
         'auction_start_time' => 'datetime',
         'auction_end_time' => 'datetime',
+        'time_extension_minutes' => 'integer',
     ];
 
     public function user()
@@ -35,5 +37,11 @@ class Product extends Model
     public function bids()
     {
         return $this->hasMany(Bid::class);
+    }
+
+
+    public function chatMessages()
+    {
+        return $this->hasMany(Chat::class);
     }
 }

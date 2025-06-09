@@ -4,6 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Notifications\OutbidNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Events\NewBid;
@@ -23,6 +24,12 @@ class BidController extends Controller
             DB::beginTransaction();
 
             try {
+                // Get the previous highest bidder before placing the new bid
+                $previousHighestBid = $product->bids()
+                    ->with('user')
+                    ->orderBy('amount', 'desc')
+                    ->first();
+
                 $bid = $product->bids()->create([
                     'user_id' => Auth::id(),
                     'amount' => $validated['amount'],
@@ -47,6 +54,10 @@ class BidController extends Controller
                 ]);
 
                 DB::commit();
+
+                if ($previousHighestBid && $previousHighestBid->user_id !== Auth::id()) {
+                    $previousHighestBid->user->notify(new OutbidNotification($bid));
+                }
 
                 try {
                     broadcast(new NewBid($bid))->toOthers();

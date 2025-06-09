@@ -25,7 +25,6 @@ class NewChatMessage implements ShouldBroadcast
 
     public function broadcastOn(): array
     {
-        Log::info('message', $this->message->product_id);
         return [
             new Channel("auction.{$this->message->product_id}.chat"),
         ];

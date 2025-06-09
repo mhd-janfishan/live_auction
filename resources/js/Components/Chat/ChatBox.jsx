@@ -17,7 +17,6 @@ export default function ChatBox({ auctionId, user }) {
     }, [messages]);
 
     useEffect(() => {
-        console.log("useEffect triggered with auctionId:", auctionId);
         const channel = window.Echo.channel(`auction.${auctionId}.chat`);
 
         channel.listen("NewMessage", (e) => {
